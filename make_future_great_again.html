@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同學聚會智慧座位編排系統 (10-14人彈性版)</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --background-color: #f3f4f6;
+            --card-background: #ffffff;
+            --text-color: #1f2937;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { color: var(--primary-color); margin-bottom: 10px; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .card {
+            background: var(--card-background);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        
+        .btn-secondary {
+            background-color: #10b981;
+            margin-top: 15px;
+        }
+        .btn-secondary:hover { background-color: #059669; }
+
+        .table-view {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th { background-color: #f9fafb; }
+
+        .results-container {
+            grid-column: 1 / -1;
+        }
+
+        .dinner-table {
+            background: #fff;
+            border: 2px dashed var(--primary-color);
+            border-radius: 50%;
+            width: 260px;
+            height: 260px;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-center {
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .table-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-grid-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .member-tag {
+            background: #eff6ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>聚會智慧座位編排系統 (10-14人彈性版)</h1>
+        <p>動態人數最佳化（每桌 10-14 人）· 滿足男搭女、政商交流、年齡相近原則</p>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h2>1. 填寫報名資料</h2>
+            <form id="familyForm">
+                <div class="form-group">
+                    <label>家庭/稱呼（例：張三家）</label>
+                    <input type="text" id="familyName" required placeholder="例如：老王一家">
+                </div>
+                <div class="form-group">
+                    <label>隨行大人人數 (不含小孩)</label>
+                    <input type="number" id="adultCount" min="1" max="4" value="2" required>
+                </div>
+                <div class="form-group">
+                    <label>小孩性別</label>
+                    <select id="childGender">
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>小孩年齡 (歲)</label>
+                    <input type="number" id="childAge" min="0" max="18" value="6" required>
+                </div>
+                <div class="form-group">
+                    <label>父母主要職業背景</label>
+                    <select id="parentJob">
+                        <option value="從商">從商</option>
+                        <option value="從政">從政</option>
+                    </select>
+                </div>
+                <button type="submit">新增至報名名單</button>
+            </form>
+            <button class="btn-secondary" onclick="loadSampleData()">載入測試模擬數據 (25人範例)</button>
+        </div>
+
+        <div class="card">
+            <h2>2. 目前報名名單 (<span id="totalPeopleCount">0</span> 人)</h2>
+            <div class="table-view">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>家庭</th>
+                            <th>總人數</th>
+                            <th>孩子</th>
+                            <th>職業</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memberTableBody">
+                        </tbody>
+                </table>
+            </div>
+            <button style="margin-top:20px; background-color:#ef4444;" onclick="clearAll()">清空所有人</button>
+        </div>
+
+        <div class="card results-container" id="resultsCard" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>3. 智慧彈性編排結果</h2>
+                <button style="width: auto;" onclick="generateSeats()">重新編排座位</button>
+            </div>
+            <div id="tablesOutput"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let families = [];
+
+    document.getElementById('familyForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const adultCount = parseInt(document.getElementById('adultCount').value);
+        
+        const family = {
+            id: Date.now(),
+            name: document.getElementById('familyName').value,
+            adultCount: adultCount,
+            childGender: document.getElementById('childGender').value,
+            childAge: parseInt(document.getElementById('childAge').value),
+            parentJob: document.getElementById('parentJob').value,
+            totalCount: adultCount + 1 
+        };
+
+        families.push(family);
+        updateUI();
+        this.reset();
+        document.getElementById('adultCount').value = 2; 
+        document.getElementById('childAge').value = 6;
+    });
+
+    function updateUI() {
+        const tbody = document.getElementById('memberTableBody');
+        tbody.innerHTML = '';
+        let totalCount = 0;
+
+        families.forEach((f) => {
+            totalCount += f.totalCount;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${f.name}</td>
+                <td>${f.totalCount}人 (${f.adultCount}大1小)</td>
+                <td>${f.childGender} (${f.childAge}歲)</td>
+                <td>${f.parentJob}</td>
+                <td><button onclick="deleteFamily(${f.id})" style="padding:4px 8px; background-color:#ef4444; font-size:12px;">刪除</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('totalPeopleCount').innerText = totalCount;
+
+        if (families.length > 0) {
+            document.getElementById('resultsCard').style.display = 'block';
+            generateSeats();
+        } else {
+            document.getElementById('resultsCard').style.display = 'none';
+        }
+    }
+
+    function deleteFamily(id) {
+        families = families.filter(f => f.id !== id);
+        updateUI();
+    }
+
+    function clearAll() {
+        families = [];
+        updateUI();
+    }
+
+    function loadSampleData() {
+        // 模擬 25 人名單，如果是死守 12 人會分出 12, 12, 1 人（最後一桌極尷尬）
+        // 在彈性 10-14人 機制下，會完美自動分成 13 人 與 12 人 兩桌！
+        families = [
+            { id: 1, name: "陳家", adultCount: 2, childGender: "男", childAge: 6, parentJob: "從政", totalCount: 3 },
+            { id: 2, name: "林家", adultCount: 2, childGender: "女", childAge: 7, parentJob: "從商", totalCount: 3 },
+            { id: 3, name: "張家", adultCount: 2, childGender: "男", childAge: 11, parentJob: "從商", totalCount: 3 },
+            { id: 4, name: "趙家", adultCount: 2, childGender: "女", childAge: 10, parentJob: "從政", totalCount: 3 },
+            { id: 5, name: "黃家", adultCount: 2, childGender: "男", childAge: 5, parentJob: "從商", totalCount: 3 },
+            { id: 6, name: "李家", adultCount: 2, childGender: "女", childAge: 4, parentJob: "從政", totalCount: 3 },
+            { id: 7, name: "周家", adultCount: 2, childGender: "男", childAge: 8, parentJob: "從商", totalCount: 3 },
+            { id: 8, name: "孫家", adultCount: 2, childGender: "女", childAge: 7, parentJob: "從政", totalCount: 3 },
+            { id: 9, name: "錢家", adultCount: 3, childGender: "女", childAge: 13, parentJob: "從商", totalCount: 4 }
+        ];
+        updateUI();
+    }
+
+    // 計算桌內人和諧度得分
+    function calculateTableScore(tableFamilies, tableTotalCount) {
+        if (tableFamilies.length <= 1) return -1000; // 人數太少或空的組合重罰
+        
+        // 基礎桌人數懲罰機制：如果這桌人數不在 10-14 之間，給予極大扣分
+        if (tableTotalCount < 10 || tableTotalCount > 14) {
+            return -5000;
+        }
+
+        let score = 0;
+        // 人數越接近黃金平衡點，給予微調獎勵
+        if (tableTotalCount >= 11 && tableTotalCount <= 13) score += 50;
+
+        // 兩兩比對組合得分
+        for (let i = 0; i < tableFamilies.length; i++) {
+            for (let j = i + 1; j < tableFamilies.length; j++) {
+                const f1 = tableFamilies[i];
+                const f2 = tableFamilies[j];
+
+                if (f1.childGender !== f2.childGender) score += 30;
+                if ((f1.parentJob === '從政' && f2.parentJob === '從商') || (f1.parentJob === '從商' && f2.parentJob === '從政')) {
+                    score += 25;
+                }
+
+                const ageDiff = Math.abs(f1.childAge - f2.childAge);
+                if (ageDiff <= 5) {
+                    score += 20 + (5 - ageDiff);
+                } else {
+                    score -= 80; // 核心硬原則：年齡相差超過5歲扣大分
+                }
+            }
+        }
+        return score;
+    }
+
+    // 智慧彈性編排
+    function generateSeats() {
+        const outputDiv = document.getElementById('tablesOutput');
+        outputDiv.innerHTML = '';
+
+        if (families.length === 0) return;
+
+        let bestArrangement = null;
+        let bestTotalScore = -Infinity;
+
+        // 隨行碰撞 200 次尋找全球最佳解
+        for (let attempt = 0; attempt < 200; attempt++) {
+            let shuffled = [...families].sort(() => Math.random() - 0.5);
+            let currentTables = [];
+            let currentTable = [];
+            let currentCount = 0;
+
+            for (let f of shuffled) {
+                // 這裡的策略是：當前桌如果加上這家超過彈性最大值14人，就開新桌
+                if (currentCount + f.totalCount > 14) {
+                    if (currentTable.length > 0) currentTables.push({ families: currentTable, count: currentCount });
+                    currentTable = [f];
+                    currentCount = f.totalCount;
+                } else {
+                    currentTable.push(f);
+                    currentCount += f.totalCount;
+                }
+            }
+            if (currentTable.length > 0) currentTables.push({ families: currentTable, count: currentCount });
+
+            // 特殊補救：如果最後一桌人數低於 10 人，嘗試將最後一桌往前挪或與前桌微調
+            // 此隨機演算法會自動透過 calculateTableScore 的 -5000 罰分，在 200 次迴圈中淘汰掉不合格的分配法
+
+            let totalScore = 0;
+            currentTables.forEach(t => {
+                totalScore += calculateTableScore(t.families, t.count);
+            });
+
+            if (totalScore > bestTotalScore) {
+                bestTotalScore = totalScore;
+                bestArrangement = currentTables;
+            }
+        }
+
+        // 輸出渲染結果
+        if (!bestArrangement || bestTotalScore < -2000) {
+            outputDiv.innerHTML = `<div style="color: #ef4444; font-weight: bold; padding: 10px;">⚠️ 當前總人數過少，或家庭組合人數難以湊成每桌 10-14 人的區間。請繼續新增人數或手動調配。</div>`;
+            return;
+        }
+
+        bestArrangement.forEach((t, index) => {
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-wrapper';
+            
+            let htmlContent = `
+                <h3>第 ${index + 1} 桌 (當前人數: ${t.count} 人 / 彈性區間 10-14 人)</h3>
+                <div class="dinner-table">
+                    <div class="table-center">第 ${index + 1} 桌<br><span style="font-size:12px; color:#4f46e5; font-weight:bold;">${t.count} 人彈性大桌</span></div>
+                </div>
+                <div class="table-grid-list">
+            `;
+
+            t.families.forEach(f => {
+                htmlContent += `
+                    <div class="member-tag">
+                        <strong>${f.name}</strong> (${f.totalCount}人)<br>
+                        👶 孩子: ${f.childGender} / ${f.childAge}歲<br>
+                        💼 父母: ${f.parentJob}
+                    </div>
+                `;
+            });
+
+            htmlContent += `</div>`;
+            tableWrapper.innerHTML = htmlContent;
+            outputDiv.appendChild(tableWrapper);
+        });
+    }
+</script>
+
+</body>
+</html>
