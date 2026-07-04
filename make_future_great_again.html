@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>同學聚會智慧座位編排系統 (修正版)</title>
+    <title>同學聚會智慧座位編排系統 (雲端同步修正版)</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -89,13 +89,13 @@
 
 <div class="container" id="mainContainer">
     <header>
-        <h1>聚會智慧座位編排系統 (修正版)</h1>
+        <h1>聚會智慧座位編排系統 (多娃/雲端同步版)</h1>
         <p>支援：單身/純大人/1-3娃家庭 · 彈性每桌 10-14 人</p>
     </header>
 
     <div class="grid">
         <div class="card">
-            <h2>1. 數據輸入與導入</h2>
+            <h2>1. 填寫報名資料</h2>
             
             <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
                 <label style="color: #4f46e5;">📊 Excel 工具箱</label>
@@ -133,19 +133,24 @@
                 </div>
                 
                 <div id="childrenContainer">
-                    <div class="child-input-row" id="childRow_0">
+                    <div class="child-input-row">
                         <span style="align-self:center; font-weight:bold; min-width:50px;">孩子 1:</span>
                         <select class="c-gender"><option value="男">男</option><option value="女">女</option></select>
                         <input type="number" class="c-age" min="0" max="18" value="6" placeholder="年齡">
                     </div>
                 </div>
 
-                <button type="submit" style="margin-top: 15px;">手動新增至名單</button>
+                <div style="margin-top: 20px;">
+                    <button type="submit">確認提交報名資料</button>
+                </div>
             </form>
         </div>
 
         <div class="card">
-            <h2>2. 目前名單 (<span id="totalPeopleCount">0</span> 人)</h2>
+            <h2>2. 目前雲端名單 (<span id="totalPeopleCount">0</span> 人)</h2>
+            <div style="text-align: right; margin-bottom: 10px;">
+                <button onclick="fetchCurrentList()" style="width: auto; padding: 6px 12px; font-size: 13px; background-color: #6b7280;">🔄 手動整理雲端名單</button>
+            </div>
             <div class="table-view">
                 <table>
                     <thead>
@@ -162,7 +167,7 @@
             </div>
             <div class="action-tools">
                 <button class="btn-danger" onclick="clearAll()">清空所有人</button>
-                <button class="btn-success" onclick="loadSampleData()">載入測試數據</button>
+                <button class="btn-success" onclick="loadSampleData()">載入本地測試數據</button>
             </div>
         </div>
 
@@ -171,7 +176,7 @@
                 <h2>3. 智慧彈性編排結果 (每桌 10-14 人)</h2>
                 <div style="display: flex; gap: 10px;">
                     <button style="background-color: #8b5cf6; width: auto;" onclick="exportToExcel()">📤 匯出結果 Excel</button>
-                    <button style="width: auto;" onclick="generateSeats()">🔄 重新編排</button>
+                    <button style="width: auto;" onclick="generateSeats()">🔄 重新編排座位</button>
                 </div>
             </div>
             <div id="tablesOutput"></div>
@@ -179,64 +184,12 @@
     </div>
 </div>
 
-    
-// 替換成你從 Google 部署得到的 Web App 網址
-const API_URL = "https://script.google.com/macros/s/AKfycbzflxDjM6K31jvxFI0YXFMPyiTxUiXQWje8rg-qOqx2bgZ9ipDUFuMKWMnkIwzJYMzS1Q/exec"; 
-
-// 網頁載入時，自動從雲端下載目前所有人填寫的名單
-window.addEventListener('DOMContentLoaded', (event) => {
-    fetchCurrentList();
-});
-
-function fetchCurrentList() {
-    fetch(API_URL)
-    .then(res => res.json())
-    .then(data => {
-        families = data;
-        updateUIWithoutLoop(); // 更新畫面名單
-    });
-}
-
-// 修改原有的「手動新增至名單」邏輯，改為上傳雲端
-document.getElementById('familyForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const adultCount = parseInt(document.getElementById('adultCount').value);
-    const childRows = document.querySelectorAll('.child-input-row');
-    let childrenList = [];
-    childRows.forEach(row => {
-        childrenList.push({
-            gender: row.querySelector('.c-gender').value,
-            age: parseInt(row.querySelector('.c-age').value || 0)
-        });
-    });
-
-    const payload = {
-        action: "add",
-        name: document.getElementById('familyName').value,
-        adultCount: adultCount,
-        parentJob: document.getElementById('parentJob').value,
-        childCount: childrenList.length,
-        children: childrenList
-    };
-
-    // 發送到雲端 Google Sheets
-    fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-        if(res.status === "success") {
-            alert("提交成功！");
-            fetchCurrentList(); // 重新整理名單
-        }
-    });
-});
-
-    
 <script>
-    const CONFIG_PASSWORD = "20thguangxinxi"; // 設定密碼
+    // 💡 填入你從 Google 部署得到的 Web App 網址以啟用雲端同步
+    // 如果留空 ""，網頁會自動切換為「單機體驗模式」，依然可以本地輸入或匯入 Excel 測試！
+    const API_URL = "https://script.google.com/macros/s/AKfycbzflxDjM6K31jvxFI0YXFMPyiTxUiXQWje8rg-qOqx2bgZ9ipDUFuMKWMnkIwzJYMzS1Q/exec"; 
+    const CONFIG_PASSWORD = "2026"; 
+    
     let families = [];
     let currentBestArrangement = null;
 
@@ -244,9 +197,28 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         if (document.getElementById('passwordInput').value === CONFIG_PASSWORD) {
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('mainContainer').style.display = 'block';
+            if (API_URL !== "") { fetchCurrentList(); }
         } else {
             document.getElementById('loginError').style.display = 'block';
         }
+    }
+
+    // 網頁初始載入
+    window.addEventListener('DOMContentLoaded', () => {
+        if (API_URL !== "" && document.getElementById('loginOverlay').style.display === 'none') {
+            fetchCurrentList();
+        }
+    });
+
+    // 從 Google Sheets 抓取最新數據
+    function fetchCurrentList() {
+        if (API_URL === "") return;
+        fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+            families = data;
+            updateUI(false); // 僅更新名單，不自動重新分桌防干擾
+        }).catch(err => console.log("雲端獲取失敗:", err));
     }
 
     function adjustChildFields(count) {
@@ -259,12 +231,13 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
             div.innerHTML = `
                 <span style="align-self:center; font-weight:bold; min-width:50px;">孩子 ${i+1}:</span>
                 <select class="c-gender"><option value="男">男</option><option value="女">女</option></select>
-                <input type="number" class="c-age" min="0" max="18" value="${6 + i*2}" placeholder="年齡">
+                <input type="number" class="c-age" min="0" max="18" value="6" placeholder="年齡">
             `;
             container.appendChild(div);
         }
     }
 
+    // 表單提交
     document.getElementById('familyForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const adultCount = parseInt(document.getElementById('adultCount').value);
@@ -272,29 +245,56 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         let childrenList = [];
         
         childRows.forEach(row => {
-            childrenList.push({
-                gender: row.querySelector('.c-gender').value,
-                age: parseInt(row.querySelector('.c-age').value || 0)
-            });
+            const genderEl = row.querySelector('.c-gender');
+            const ageEl = row.querySelector('.c-age');
+            if (genderEl && ageEl) {
+                childrenList.push({
+                    gender: genderEl.value,
+                    age: parseInt(ageEl.value || 0)
+                });
+            }
         });
 
-        families.push({
+        const newFamily = {
             id: Date.now() + Math.random(),
             name: document.getElementById('familyName').value,
             adultCount: adultCount,
             parentJob: document.getElementById('parentJob').value,
             children: childrenList,
             totalCount: adultCount + childrenList.length
-        });
+        };
 
-        updateUI();
+        if (API_URL !== "") {
+            // 雲端模式：推送到 Google Sheets
+            const payload = {
+                action: "add",
+                name: newFamily.name,
+                adultCount: newFamily.adultCount,
+                parentJob: newFamily.parentJob,
+                childCount: childrenList.length,
+                children: childrenList
+            };
+            fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(res => {
+                if(res.status === "success") {
+                    alert("雲端提交成功！");
+                    fetchCurrentList();
+                }
+            }).catch(err => alert("上傳失敗，請確認後端網址"));
+        } else {
+            // 單機模式
+            families.push(newFamily);
+            updateUI(true);
+        }
+
         this.reset();
         document.getElementById('adultCount').value = 2;
         document.getElementById('childCount').value = "1";
         adjustChildFields(1);
     });
 
-    function updateUI() {
+    function updateUI(triggerGrouping = true) {
         const tbody = document.getElementById('memberTableBody');
         tbody.innerHTML = '';
         let totalCount = 0;
@@ -316,14 +316,14 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         document.getElementById('totalPeopleCount').innerText = totalCount;
         if (families.length > 0) {
             document.getElementById('resultsCard').style.display = 'block';
-            generateSeats();
+            if (triggerGrouping) generateSeats();
         } else {
             document.getElementById('resultsCard').style.display = 'none';
         }
     }
 
-    function deleteFamily(id) { families = families.filter(f => f.id !== id); updateUI(); }
-    function clearAll() { families = []; updateUI(); }
+    function deleteFamily(id) { families = families.filter(f => f.id !== id); updateUI(true); }
+    function clearAll() { families = []; updateUI(true); }
 
     function downloadTemplate() {
         const templateData = [
@@ -346,20 +346,15 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
             jsonData.forEach(row => {
-                const name = row['家庭名稱'];
-                if (!name) return;
+                const name = row['家庭名稱']; if (!name) return;
                 const adults = parseInt(row['大人人數'] || 2);
                 const job = row['父母職業'] || '從商';
-                
                 let children = [];
                 for(let i=1; i<=3; i++) {
                     let g = row[`孩子${i}性別`] || row[`小孩${i}性別`];
                     let a = row[`孩子${i}年齡`] || row[`小孩${i}年齡`];
-                    if(g) {
-                        children.push({ gender: g.toString().trim(), age: parseInt(a || 0) });
-                    }
+                    if(g) { children.push({ gender: g.toString().trim(), age: parseInt(a || 0) }); }
                 }
-
                 families.push({
                     id: Date.now() + Math.random(),
                     name: name.toString(),
@@ -369,7 +364,7 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
                     totalCount: adults + children.length
                 });
             });
-            alert("Excel 批次名單匯入成功！"); updateUI(); input.value = '';
+            alert("本地匯入成功！"); updateUI(true); input.value = '';
         };
         reader.readAsArrayBuffer(file);
     }
@@ -393,39 +388,26 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "座位分配表");
-        XLSX.writeFile(workbook, "同學聚會多娃座位智慧編排結果.xlsx");
+        XLSX.writeFile(workbook, "同學聚會智慧編排結果.xlsx");
     }
 
-    // 核心多娃相容評分算法
     function calculateTableScore(tableFamilies, tableTotalCount) {
         if (tableFamilies.length <= 1) return -100;
-        // 人數控制 (硬性指標：若不在 10-14 人範圍，強烈扣分)
         if (tableTotalCount < 10 || tableTotalCount > 14) return -10000; 
 
         let score = 0;
-        if (tableTotalCount >= 11 && tableTotalCount <= 13) score += 60; // 完美大桌加分
+        if (tableTotalCount >= 11 && tableTotalCount <= 13) score += 60; 
 
         for (let i = 0; i < tableFamilies.length; i++) {
             for (let j = i + 1; j < tableFamilies.length; j++) {
-                const f1 = tableFamilies[i];
-                const f2 = tableFamilies[j];
-
-                // 1. 職業政商互補
-                if ((f1.parentJob === '從政' && f2.parentJob === '從商') || (f1.parentJob === '從商' && f2.parentJob === '從政')) {
-                    score += 30;
-                }
-
-                // 2. 交叉比對兩家孩子
+                const f1 = tableFamilies[i]; const f2 = tableFamilies[j];
+                if ((f1.parentJob === '從政' && f2.parentJob === '從商') || (f1.parentJob === '從商' && f2.parentJob === '從政')) { score += 30; }
                 if (f1.children.length > 0 && f2.children.length > 0) {
                     f1.children.forEach(c1 => {
                         f2.children.forEach(c2 => {
                             if (c1.gender !== c2.gender) score += 15;
                             const ageDiff = Math.abs(c1.age - c2.age);
-                            if (ageDiff <= 5) {
-                                score += 15 + (5 - ageDiff);
-                            } else {
-                                score -= 5; // 放寬此處，避免算法死鎖找不到解
-                            }
+                            if (ageDiff <= 5) { score += 15 + (5 - ageDiff); } else { score -= 5; }
                         });
                     });
                 }
@@ -442,7 +424,6 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         let bestArrangement = null;
         let bestTotalScore = -Infinity;
 
-        // 隨機碰撞
         for (let attempt = 0; attempt < 300; attempt++) {
             let shuffled = [...families].sort(() => Math.random() - 0.5);
             let currentTables = []; let currentTable = []; let currentCount = 0;
@@ -467,7 +448,7 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
         }
 
         if (!bestArrangement || bestTotalScore < -5000) {
-            outputDiv.innerHTML = `<div style="color: #ef4444; font-weight: bold; padding: 10px;">⚠️ 當前總人數組合（或單一個家庭人數過多）無法完美湊成每桌 10-14 人的區間。請繼續新增家庭或調整名單。</div>`;
+            outputDiv.innerHTML = `<div style="color: #ef4444; font-weight: bold; padding: 10px;">⚠️ 當前總人數組合無法完美湊成每桌 10-14 人的區間，請手動增減人數或重試。</div>`;
             currentBestArrangement = null;
             return;
         }
@@ -483,7 +464,6 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
                 <div class="table-grid-list">
             `;
 
-            // 修正此處的 t.families 迴圈命名
             t.families.forEach(f => {
                 let childDesc = f.children.length === 0 ? "無小孩" : f.children.map(c=>`${c.gender}(${c.age}歲)`).join(', ');
                 htmlContent += `
@@ -510,7 +490,7 @@ document.getElementById('familyForm').addEventListener('submit', function(e) {
             { id: 7, name: "周同學(雙娃)", adultCount: 2, parentJob: "從商", children: [{gender:"男", age:7}, {gender:"男", age:9}], totalCount: 4 },
             { id: 8, name: "單身老王", adultCount: 1, parentJob: "從政", children: [], totalCount: 1 }
         ];
-        updateUI();
+        updateUI(true);
     }
 </script>
 </body>
