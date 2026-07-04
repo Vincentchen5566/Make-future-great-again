@@ -179,6 +179,62 @@
     </div>
 </div>
 
+    
+// 替換成你從 Google 部署得到的 Web App 網址
+const API_URL = "https://script.google.com/macros/s/AKfycbzflxDjM6K31jvxFI0YXFMPyiTxUiXQWje8rg-qOqx2bgZ9ipDUFuMKWMnkIwzJYMzS1Q/exec"; 
+
+// 網頁載入時，自動從雲端下載目前所有人填寫的名單
+window.addEventListener('DOMContentLoaded', (event) => {
+    fetchCurrentList();
+});
+
+function fetchCurrentList() {
+    fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+        families = data;
+        updateUIWithoutLoop(); // 更新畫面名單
+    });
+}
+
+// 修改原有的「手動新增至名單」邏輯，改為上傳雲端
+document.getElementById('familyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const adultCount = parseInt(document.getElementById('adultCount').value);
+    const childRows = document.querySelectorAll('.child-input-row');
+    let childrenList = [];
+    childRows.forEach(row => {
+        childrenList.push({
+            gender: row.querySelector('.c-gender').value,
+            age: parseInt(row.querySelector('.c-age').value || 0)
+        });
+    });
+
+    const payload = {
+        action: "add",
+        name: document.getElementById('familyName').value,
+        adultCount: adultCount,
+        parentJob: document.getElementById('parentJob').value,
+        childCount: childrenList.length,
+        children: childrenList
+    };
+
+    // 發送到雲端 Google Sheets
+    fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.status === "success") {
+            alert("提交成功！");
+            fetchCurrentList(); // 重新整理名單
+        }
+    });
+});
+
+    
 <script>
     const CONFIG_PASSWORD = "20thguangxinxi"; // 設定密碼
     let families = [];
